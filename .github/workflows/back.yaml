@@ -92,8 +92,22 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script_stop: false
           script: |
-            pkill -f "java.*datastore-0.0.7.jar" || true
-            sleep 5
+            PID=$(pgrep -f "datastore-0.0.7.jar" || true)
+      
+            if [ -n "$PID" ]; then
+              echo "Stopping application PID: $PID"
+              kill -15 $PID || true
+              sleep 5
+      
+              if ps -p $PID > /dev/null; then
+                echo "Force killing PID: $PID"
+                kill -9 $PID || true
+              fi
+            else
+              echo "No running application found."
+            fi
+      
+            exit 0
 
       - name: Start Application
         uses: appleboy/ssh-action@v1.1.0
